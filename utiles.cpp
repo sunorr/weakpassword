@@ -10,6 +10,9 @@
 void _sshwp_debug( char * fmt, ... )
 {
 #ifdef __DEBUG__
+    if ( !OPENDEBUG )
+        return;
+
     va_list valist;
     int argn = 0;
     char *para = NULL;

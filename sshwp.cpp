@@ -1,5 +1,9 @@
 #include <Windows.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <io.h>
+#include <ctype.h>
+#include <conio.h>
 #include "getopt.h"
 #include "utiles.h"
 #include "sshlogin.h"
@@ -72,11 +76,12 @@ UINT __stdcall guss_passwd( void * argument )
         else
         {
             ip_complete++;
-            _sshwp_show( "%8.2f%%", ip_complete / ip_sum * 100 );
-            _sshwp_show( "\b\b\b\b\b\b\b\b\b" );
         }
         LeaveCriticalSection( &CriticalSection_list );
         guss_ssh_passwd( ip, args->port, args->dictionary, args->password, args->timeout );
+
+        _sshwp_show( "%8.2f%%", ip_complete / ip_sum * 100 );
+        _sshwp_show( "\b\b\b\b\b\b\b\b\b" );
     }
 
 err:
@@ -84,10 +89,12 @@ err:
     return 0;
 }
 
+int OPENDEBUG = 0;
 
 int main( int argc, char *argv[] )
 {
     int c = 0;
+    OPENDEBUG = 0;
 
     THREAD_ARGS args = {0};
     int thread_num = 512;
@@ -106,6 +113,7 @@ int main( int argc, char *argv[] )
 
         // Debug Ä£Ê½
         case 'D':
+            OPENDEBUG = 1;
             break;
 
         // ÃÜÂë×Öµä
@@ -148,11 +156,22 @@ int main( int argc, char *argv[] )
     if ( args.password[0] == 0 )
         strcpy( args.password, ip_net );
 
-    if ( thread_num > 256 )
+    if ( _access( args.password, 0 ) != -1 )
+    {
+        _sshwp_show( "The password file : %s is exists, do you want to recreate it?[y/n]", args.password );
+        if ( _getch() == 'y' )
+            fopen( args.password, "w" );
+        else
+            exit( -1 );
+    }
+
+    if ( thread_num > MAX_THREAD )
         thread_num = MAX_THREAD;
 
     if ( args.timeout == 0 )
         args.timeout = 3;
+
+    
 
     ip_list = ipsplit( ip_net );
 
@@ -170,7 +189,7 @@ int main( int argc, char *argv[] )
     unsigned threadid;
     int i = 0;
 
-    _sshwp_show( "progress: " );
+    _sshwp_show( "\nprogress: " );
     for ( i = 0; i < thread_num; i++ )
     {
         thread_handles[i] =

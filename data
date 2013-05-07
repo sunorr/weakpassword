@@ -1,10 +1,13 @@
 root root
+root nsfocus
+root nsfocus
 admin admin
 test test
 guest guest
 webmaster webmaster
 mysql mysql
 oracle oracle
+root nsfocus
 library library
 info info
 shell shell

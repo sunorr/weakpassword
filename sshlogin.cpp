@@ -165,6 +165,8 @@ int guss_ssh_passwd( char *hostname, int port = 22, char *dict_file = "data", ch
     int rc = 0;
     // 记录字典读取的状态
     int rdict = 0;
+    puser_info->dict_line_len = 0;
+    puser_info->rflag = REMOTE_OPENED;
 
     while ( 1 )
     {
@@ -188,12 +190,21 @@ int guss_ssh_passwd( char *hostname, int port = 22, char *dict_file = "data", ch
                               hostname, 
                               puser_info->username, 
                               puser_info->password );
-                break;
+
+                // TODO: 怎么尤雅的检验
+                if ( log )
+                {
+                    EnterCriticalSection( &g_CriticalSection_write );
+                    write_ssh_info( log, hostname, puser_info );
+                    LeaveCriticalSection( &g_CriticalSection_write );
+                }
+                continue;
             }
             // TODO 如果非密码验证的错误, 需要重新验证密码
             else if ( rc == LIBSSH2_ERROR_AUTHENTICATION_FAILED )
             {
                 _sshwp_debug( "Authentication by password failed.(%d)\n", rc );
+                int t = libssh2_session_last_error( pss->session, NULL,NULL, 0 );
                 continue;
             }
             else
@@ -207,7 +218,7 @@ int guss_ssh_passwd( char *hostname, int port = 22, char *dict_file = "data", ch
         pss = NULL;
 
         if ( rdict != -1 && rc != LIBSSH2_ERROR_AUTHENTICATION_FAILED )
-            fseek( fp, 0 - rdict, SEEK_CUR );
+            puser_info->rflag = REMOTE_CLOSED;
 
         if ( rc == 0 || rdict == -1 )
             break;
@@ -222,12 +233,7 @@ int guss_ssh_passwd( char *hostname, int port = 22, char *dict_file = "data", ch
     }
 
     fclose( fp );
-    if ( log )
-    {
-        EnterCriticalSection( &g_CriticalSection_write );
-        write_ssh_info( log, hostname, puser_info );
-        LeaveCriticalSection( &g_CriticalSection_write );
-    }
+    
 
     free( puser_info );
     return 0;

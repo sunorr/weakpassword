@@ -15,6 +15,7 @@ extern "C" {
 
 
 
+extern int OPENDEBUG;
 
 typedef struct _ip_list
 {
@@ -22,10 +23,14 @@ typedef struct _ip_list
     _ip_list * next;
 }IP_LIST, *PIP_LIST;
 
+#define REMOTE_CLOSED  1
+#define REMOTE_OPENED  0
 typedef struct _usr_inf
 {
     char  username[USERNAME_LEN];
     char  password[PASSWORD_LEN];
+    unsigned char rflag;
+    int dict_line_len;
 }USR_INF, *PUSR_INF;
 
 void _sshwp_debug( char * fmt, ... );
